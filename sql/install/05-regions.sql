@@ -15,7 +15,9 @@
  */
 
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
--- Region Functions (regions.c)
+-- Region Functions
+--
+-- These functions convert H3 indexes to and from polygonal areas.
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 
 -- Availability: 0.2.0

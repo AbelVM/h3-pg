@@ -15,7 +15,10 @@
  */
 
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
--- Unidirectional Edge Functions (uniedges.c)
+-- Unidirectional Edge Functions
+--
+-- Unidirectional edges allow encoding the directed edge
+-- from one cell to a neighboring cell.
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 
 -- Availability: 1.0.0

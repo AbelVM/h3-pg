@@ -15,7 +15,11 @@
  */
 
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
--- Index Inspection Functions (inspection.c)
+-- Index Inspection Functions
+--
+-- These functions provide metadata about an H3 index, such as its resolution
+-- or base cell, and provide utilities for converting into and out of
+-- the 64-bit representation of an H3 index.
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 
 -- Availability: 1.0.0

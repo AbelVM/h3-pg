@@ -15,7 +15,10 @@
  */
 
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
--- Hierarchical Grid Functions (hierarchy.c)
+-- Hierarchical Grid Functions
+--
+-- These functions permit moving between resolutions in the H3 grid system.
+-- The functions produce parent (coarser) or children (finer) cells.
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 
 -- Availability: 1.0.0

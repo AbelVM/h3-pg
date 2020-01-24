@@ -15,7 +15,10 @@
  */
 
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
--- Indexing Functions (indexing.c)
+-- Indexing Functions
+--
+-- These function are used for finding the H3 index containing coordinates,
+-- and for finding the center and boundary of H3 indexes.
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 
 -- Availability: 0.2.0

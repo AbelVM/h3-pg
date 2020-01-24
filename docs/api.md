@@ -1,6 +1,8 @@
 # API Reference
 
-- [Indexing](#indexing-functions)
+- [Indexing functions](#indexing-functions)
+  - [h3_geo_to_h3(location `point`, resolution `int`) ⇒ `h3index`]()
+  - [h3_to_geo(h3 `h3index`) ⇒ `point`](#h3_geo_to_h3-location-point-resolution-int-h3index)
 - [Inspection](#index-inspection-functions)
 - [Traversal](#grid-traversal-functions)
 - [Hierarchy](#hierarchical-grid-functions)
@@ -9,7 +11,31 @@
 - [Miscellaneous](#miscellaneous-h3-functions)
 - [PostGIS](#postgis-integration)
 
+## Type
+
+The `h3index` type is internally represented as a 64 bit unsigned integer.
+
+### Casts
+
+You can cast the index to the following types:
+
+- `bigint`
+- `point`
+- `geometry`
+- `geography`
+
+### Operators
+
+- `a && b`: does a overlap b
+- `a @> b`: does a contain b
+- `a <@ b`: is a contained by b
+
 ## Indexing functions
+
+These function are used for finding the H3 index containing coordinates, and for finding the center and boundary of H3 indexes.
+
+- [h3_geo_to_h3(location `point`, resolution `int`) ⇒ `h3index`]()
+- [h3_to_geo(h3 `h3index`) ⇒ `point`]()
 
 ### h3_geo_to_h3(location `point`, resolution `int`) ⇒ `h3index`
 
@@ -48,6 +74,11 @@ SELECT h3_to_geo_boundary(:hexagon);
 ```
 
 ## Index inspection functions
+
+These functions provide metadata about an H3 index, such as its resolution or base cell, and provide utilities for converting into and out of the 64-bit representation of an H3 index.
+
+- [h3_geo_to_h3(location `point`, resolution `int`) ⇒ `h3index`]()
+- [h3_to_geo(h3 `h3index`) ⇒ `point`]()
 
 ### h3_get_resolution(h3 `h3index`) ⇒ `integer`
 

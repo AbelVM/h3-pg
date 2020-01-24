@@ -15,7 +15,9 @@
  */
 
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
--- Miscellaneous H3 Functions (miscellaneous.c)
+-- Miscellaneous H3 Functions
+--
+-- These functions include descriptions of the H3 grid system.
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 
 -- Availability: 3.5.0

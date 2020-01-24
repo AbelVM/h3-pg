@@ -111,6 +111,30 @@ def sql2md(file):
         parse_tree = parser.parse(sql)
         return SQLTransformer(visit_tokens=True).transform(parse_tree)
 
+"""
+The concept:
+
+We don't want to manually keep API docs in sync with SQL files.
+
+So instead we should generate the docs from the sql/install/*.sql files.
+
+We have the following things to document:
+    * Type
+    * Cast (put in same section as the type)
+    * Operator
+    * Function
+
+Some functions do not need docs, we can signal this by not applying a comment.
+This is internal operator functions for example.
+
+We should parse the sql files, extract the above, and then document all things that
+have comments applied.
+
+We should probably hardcode a list of things that should not be documented, so we can
+fail if new function are undocumented.
+
+"""
+
 if __name__ == '__main__':
     files = glob.glob(sys.argv[1])
     for file in files:

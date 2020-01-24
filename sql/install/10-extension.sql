@@ -15,7 +15,9 @@
  */
 
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
--- Extension Specific Functions (extension.c)
+-- Extension Specific Functions
+--
+-- Utilities not part of the core library
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 
 -- Availability: 1.0.0
