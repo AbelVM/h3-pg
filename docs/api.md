@@ -11,9 +11,9 @@
 
 ## Indexing functions
 
-### h3_geo_to_h3(`point`, resolution `int`) ⇒ `h3index`
+### h3_geo_to_h3(location `point`, resolution `int`) ⇒ `h3index`
 
-Converts native PostgreSQL point to hex at given resolution.
+Index the location represented by a native PostgreSQL `point` at the specified resolution resolution, returning the `h3index` of the cell containing the location.
 
 ```
 SELECT h3_geo_to_h3(POINT('64.7498111652365,89.5695822308866'), 8);
@@ -23,9 +23,9 @@ SELECT h3_geo_to_h3(POINT('64.7498111652365,89.5695822308866'), 8);
 (1 row)
 ```
 
-### h3_to_geo(`h3index`) ⇒ `point`
+### h3_to_geo(h3 `h3index`) ⇒ `point`
 
-Finds the centroid of this hex in native PostgreSQL point type.
+Find the centroid of the `h3index`, as a native PostgreSQL `point`.
 
 ```
 SELECT h3_to_geo('880326b88dfffff');
@@ -35,9 +35,9 @@ SELECT h3_to_geo('880326b88dfffff');
 (1 row)
 ```
 
-### h3_to_geo_boundary(`h3index`) ⇒ `polygon`
+### h3_to_geo_boundary(h3 `h3index`) ⇒ `polygon`
 
-Find the boundary of this hex, in native PostgreSQL polygon type.
+Find the boundary of the `h3index`, as a native PostgreSQL `polygon`.
 
 ```
 SELECT h3_to_geo_boundary(:hexagon);
@@ -49,9 +49,9 @@ SELECT h3_to_geo_boundary(:hexagon);
 
 ## Index inspection functions
 
-### h3_get_resolution(`h3index`) ⇒ `integer`
+### h3_get_resolution(h3 `h3index`) ⇒ `integer`
 
-Returns the resolution of this hex.
+Return the resolution of the `h3index`.
 
 ```
 SELECT h3_get_resolution(:hexagon), h3_get_resolution(:pentagon);
@@ -61,9 +61,9 @@ SELECT h3_get_resolution(:hexagon), h3_get_resolution(:pentagon);
 (1 row)
 ```
 
-### h3_get_base_cell(`h3index`) ⇒ `integer`
+### h3_get_base_cell(h3 `h3index`) ⇒ `integer`
 
-Returns the base cell number of the given hex.
+Return the base cell number of the `h3index`.
 
 ```
 SELECT h3_get_base_cell(:hexagon), h3_get_base_cell(h3_to_parent(:hexagon));
@@ -73,33 +73,9 @@ SELECT h3_get_base_cell(:hexagon), h3_get_base_cell(h3_to_parent(:hexagon));
 (1 row)
 ```
 
-### h3_string_to_h3(`cstring`) ⇒ `h3index`
+### h3_is_valid(h3 `h3index`) ⇒ `boolean`
 
-Converts the string representation to H3Index representation. Not very useful, since the internal representation can already be displayed as text for output, and read as text from input.
-
-```
-SELECT h3_string_to_h3('880326b88dfffff);
- h3_string_to_h3
------------------
- 880326b88dfffff
-(1 row)
-```
-
-### h3_to_string(`h3index`) ⇒ `cstring`
-
-Converts the H3Index representation of the index to the string representation. Not very useful, since the internal representation can already be displayed as text for output, and read as text from input.
-
-```
-SELECT h3_to_string('880326b88dfffff);
- h3_to_string
------------------
- 880326b88dfffff
-(1 row)
-```
-
-### h3_is_valid(`h3index`) ⇒ `boolean`
-
-Returns whether this is a valid hex.
+Return whether the `h3index` is a valid H3 index.
 
 ```
 SELECT h3_is_valid(:hexagon), h3_is_valid(:pentagon), h3_is_valid(:invalid);
@@ -110,10 +86,10 @@ SELECT h3_is_valid(:hexagon), h3_is_valid(:pentagon), h3_is_valid(:invalid);
 
 ```
 
-### h3_is_res_class_iii(`h3index`) ⇒ `boolean`
+### h3_is_res_class_iii(h3 `h3index`) ⇒ `boolean`
 
-Returns true if the resolution of the given index has a class-III rotation,
-returns false if it has a class-II.
+Return true if the resolution of the given `h3index` has a class-III rotation,
+or false if it has a class-II.
 
 ```
 SELECT h3_is_res_class_iii(:hexagon), h3_is_res_class_iii(h3_to_parent(:hexagon));
@@ -123,9 +99,9 @@ SELECT h3_is_res_class_iii(:hexagon), h3_is_res_class_iii(h3_to_parent(:hexagon)
 (1 row)
 ```
 
-### h3_is_pentagon(`h3index`) ⇒ `boolean`
+### h3_is_pentagon(h3 `h3index`) ⇒ `boolean`
 
-Returns whether this represents a pentagonal cell.
+Return whether the `h3index` represents a pentagonal cell.
 
 ```
 SELECT h3_is_pentagon(:hexagon), h3_is_pentagon(:pentagon);
@@ -135,7 +111,7 @@ SELECT h3_is_pentagon(:hexagon), h3_is_pentagon(:pentagon);
 (1 row)
 ```
 
-### h3_get_faces(`h3index`) ⇒ `integer[]`
+### h3_get_faces(h3 `h3index`) ⇒ `integer[]`
 
 Find all icosahedron faces intersected by a given H3 index.
 
@@ -149,7 +125,7 @@ SELECT h3_get_faces('851c0047fffffff');
 
 ## Grid traversal functions
 
-### h3_k_ring(`h3index`, k `integer default 1`) ⇒ `setof`(`h3index`)
+### h3_k_ring(h3 `h3index`, k `integer default 1`) ⇒ `setof`(`h3index`)
 
 Returns all hexes within `k` (default 1) distance of the origin `hex`, including itself.
 
@@ -212,7 +188,7 @@ SELECT h3_hex_range(:hexagon);
 (7 rows)
 ```
 
-### h3_hex_range_distances(`h3index`, k `integer default 1`) ⇒ `setof`(index` h3index`, distance `integer`)
+### h3_hex_range_distances(`h3index`, k `integer default 1`) ⇒ `setof`(index`h3index`, distance `integer`)
 
 Finds the set of all hexes within `k` (default 1) distance of the origin `hex` and their respective distances, including itself.
 
@@ -618,5 +594,5 @@ Same as above, but returns `geography` type.
 
 Some functions does not have bindings:
 
-* `degsToRads`/`radsToDegs`: Use postgres built-ins `RADIANS()` and `DEGREES()` instead.
-* Memory handling functions: `maxKringSize`, `h3LineSize`, `maxH3ToChildrenSize`, `maxUncompactSize`, `maxPolyfillSize`, `destroyLinkedPolygon`. Memory is handled by the extensnion.
+- `degsToRads`/`radsToDegs`: Use postgres built-ins `RADIANS()` and `DEGREES()` instead.
+- Memory handling functions: `maxKringSize`, `h3LineSize`, `maxH3ToChildrenSize`, `maxUncompactSize`, `maxPolyfillSize`, `destroyLinkedPolygon`. Memory is handled by the extensnion.

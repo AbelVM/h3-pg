@@ -35,11 +35,11 @@ CREATE OR REPLACE FUNCTION h3_to_geography(h3index) RETURNS geography
   AS $$ SELECT h3_to_geometry($1)::geography $$ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE SQL;
 
 -- Availability: 1.0.0
-CREATE OR REPLACE FUNCTION h3_to_geo_boundary_geometry(h3index, extend BOOLEAN default FALSE) RETURNS geometry
+CREATE OR REPLACE FUNCTION h3_to_geo_boundary_geometry(h3index, extend BOOLEAN DEFAULT FALSE) RETURNS geometry
   AS $$ SELECT ST_SetSRID(h3_to_geo_boundary($1, $2)::geometry, 4326) $$ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE SQL;
 
 -- Availability: 1.0.0
-CREATE OR REPLACE FUNCTION h3_to_geo_boundary_geography(h3index, extend BOOLEAN default FALSE) RETURNS geography
+CREATE OR REPLACE FUNCTION h3_to_geo_boundary_geography(h3index, extend BOOLEAN DEFAULT FALSE) RETURNS geography
   AS $$ SELECT h3_to_geo_boundary_geometry($1, $2)::geography $$ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE SQL;
 
 -- Availability: 0.3.0
@@ -73,9 +73,12 @@ AS $$ SELECT h3_polyfill($1::geometry, $2) $$ LANGUAGE SQL IMMUTABLE STRICT PARA
 
 -- Availability: 0.3.0
 CREATE CAST (h3index AS point) WITH FUNCTION h3_to_geo(h3index);
+COMMENT ON CAST (h3index AS point) IS 'Allow casts from h3index to native point';
 
 -- Availability: 0.3.0
 CREATE CAST (h3index AS geometry) WITH FUNCTION h3_to_geometry(h3index);
+COMMENT ON CAST (h3index AS geometry) IS 'Allow casts from h3index to PostGIS geometry';
 
 -- Availability: 0.3.0
 CREATE CAST (h3index AS geography) WITH FUNCTION h3_to_geography(h3index);
+COMMENT ON CAST (h3index AS geography) IS 'Allow casts from h3index to PostGIS geography';

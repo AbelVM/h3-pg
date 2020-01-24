@@ -19,25 +19,25 @@
 -- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 
 -- Availability: 0.2.0
-CREATE OR REPLACE FUNCTION h3_k_ring(h3index, k integer DEFAULT 1) RETURNS SETOF h3index
+CREATE OR REPLACE FUNCTION h3_k_ring(origin h3index, k integer DEFAULT 1) RETURNS SETOF h3index
     AS 'h3' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-    COMMENT ON FUNCTION h3_k_ring(h3index, k integer) IS
+    COMMENT ON FUNCTION h3_k_ring(h3index, integer) IS
 'Produces indices within "k" distance of the origin index';
 
 -- Availability: 0.2.0
-CREATE OR REPLACE FUNCTION h3_k_ring_distances(h3index, k integer DEFAULT 1, OUT index h3index, OUT distance int) RETURNS SETOF record
+CREATE OR REPLACE FUNCTION h3_k_ring_distances(origin h3index, k integer DEFAULT 1, OUT index h3index, OUT distance integer) RETURNS SETOF record
     AS 'h3' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-    COMMENT ON FUNCTION h3_k_ring_distances(h3index, k integer) IS
+    COMMENT ON FUNCTION h3_k_ring_distances(h3index, integer) IS
 'Produces indices within "k" distance of the origin index paired with their distance to the origin';
 
 -- Availability: 0.2.0
-CREATE OR REPLACE FUNCTION h3_hex_ring(h3index, k integer DEFAULT 1) RETURNS SETOF h3index
+CREATE OR REPLACE FUNCTION h3_hex_ring(origin h3index, k integer DEFAULT 1) RETURNS SETOF h3index
     AS 'h3' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-    COMMENT ON FUNCTION h3_hex_ring(h3index, k integer) IS
+    COMMENT ON FUNCTION h3_hex_ring(h3index, integer) IS
 'Returns the hollow hexagonal ring centered at origin with distance "k"';
 
 -- Availability: 0.4.0
-CREATE OR REPLACE FUNCTION h3_line(h3index, h3index) RETURNS SETOF h3index
+CREATE OR REPLACE FUNCTION h3_line(start h3index, end h3index) RETURNS SETOF h3index
     AS 'h3' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
     COMMENT ON FUNCTION h3_line(h3index, h3index) IS
 'Given two H3 indexes, return the line of indexes between them (inclusive).
