@@ -16,8 +16,6 @@
 
 #include <postgres.h>		 // Datum, etc.
 #include <fmgr.h>			 // PG_FUNCTION_ARGS, etc.
-#include <utils/geo_decls.h> // making native points
-#include <access/hash.h>	 // hash_any
 
 #include <h3api.h> // Main H3 include
 #include "extension.h"
@@ -27,40 +25,6 @@ PG_FUNCTION_INFO_V1(h3index_in);
 PG_FUNCTION_INFO_V1(h3index_out);
 PG_FUNCTION_INFO_V1(h3index_to_bigint);
 PG_FUNCTION_INFO_V1(bigint_to_h3index);
-
-/* b-tree */
-PG_FUNCTION_INFO_V1(h3index_eq);
-PG_FUNCTION_INFO_V1(h3index_ne);
-PG_FUNCTION_INFO_V1(h3index_lt);
-PG_FUNCTION_INFO_V1(h3index_le);
-PG_FUNCTION_INFO_V1(h3index_gt);
-PG_FUNCTION_INFO_V1(h3index_ge);
-
-/* r-tree */
-PG_FUNCTION_INFO_V1(h3index_overlaps);
-PG_FUNCTION_INFO_V1(h3index_contains);
-PG_FUNCTION_INFO_V1(h3index_contained_by);
-
-/* static helpers */
-static int
-containment(H3Index a, H3Index b)
-{
-	int			aRes = h3GetResolution(a);
-	int			bRes = h3GetResolution(b);
-	H3Index		aParent = h3ToParent(a, bRes);
-	H3Index		bParent = h3ToParent(b, aRes);
-
-	/* a contains b */
-	if (a == bParent)
-		return 1;
-
-	/* a contained by b */
-	if (b == aParent)
-		return -1;
-
-	/* no overlap */
-	return 0;
-}
 
 /* textual input/output functions */
 Datum
@@ -97,96 +61,4 @@ bigint_to_h3index(PG_FUNCTION_ARGS)
 	int64		bigint = PG_GETARG_INT64(0);
 
 	PG_RETURN_H3INDEX(bigint);
-}
-
-/* b-tree operators */
-Datum
-h3index_eq(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = a == b;
-
-	PG_RETURN_BOOL(ret);
-}
-
-Datum
-h3index_ne(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = a != b;
-
-	PG_RETURN_BOOL(ret);
-}
-
-Datum
-h3index_lt(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = a < b;
-
-	PG_RETURN_BOOL(ret);
-}
-
-Datum
-h3index_le(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = a <= b;
-
-	PG_RETURN_BOOL(ret);
-}
-
-Datum
-h3index_gt(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = a > b;
-
-	PG_RETURN_BOOL(ret);
-}
-
-Datum
-h3index_ge(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = a >= b;
-
-	PG_RETURN_BOOL(ret);
-}
-
-/* r-tree operators */
-Datum
-h3index_overlaps(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = containment(a, b) != 0;
-
-	PG_RETURN_BOOL(ret);
-}
-
-Datum
-h3index_contains(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = containment(a, b) > 0;
-
-	PG_RETURN_BOOL(ret);
-}
-
-Datum
-h3index_contained_by(PG_FUNCTION_ARGS)
-{
-	H3Index		a = PG_GETARG_H3INDEX(0);
-	H3Index		b = PG_GETARG_H3INDEX(1);
-	bool		ret = containment(a, b) < 0;
-
-	PG_RETURN_BOOL(ret);
 }

@@ -12,3 +12,14 @@ INSERT INTO h3_test_gist (hex) SELECT h3_to_center_child(:hexagon, 15);
 --
 SELECT COUNT(*) = 1 FROM h3_test_gist WHERE hex @> :hexagon;
 SELECT COUNT(*) = 8 FROM h3_test_gist WHERE hex <@ :hexagon;
+
+INSERT INTO h3_test_gist (hex) SELECT h3_k_ring(:hexagon, 2);
+SELECT COUNT(*) = 8 FROM h3_test_gist WHERE hex <-> :hexagon = 2;
+
+--
+-- BREAK GIST
+--
+
+SELECT COUNT(*) = 8 FROM h3_test_gist WHERE hex <@ :hexagon;
+INSERT INTO h3_test_gist (hex) SELECT h3_to_children(:hexagon, 8);
+SELECT COUNT(*) > 8 FROM h3_test_gist WHERE hex <@ :hexagon;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Bytes & Brains
+ * Copyright 2019-2020 Bytes & Brains
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,50 +17,50 @@
 #include <postgres.h>		 // Datum, etc.
 #include <fmgr.h>			 // PG_FUNCTION_ARGS, etc.
 #include <utils/geo_decls.h> // making native points
-#include <access/hash.h>	 // hash_any
-#include "access/gist.h"	 // GiST
+#include <access/stratnum.h> // RTOverlapStrategyNumber, etc.
+#include <access/gist.h>	 // GiST
 
 #include <h3api.h> // Main H3 include
 #include "extension.h"
+#include "upstream/h3Index.h"
 
 #define H3_ROOT_INDEX -1
 
 static int
-gist_cmp(H3Index  * a, H3Index * b)
+gist_cmp(H3Index a, H3Index b)
 {
 	int			aRes;
 	int			bRes;
 
-	uint64_t	cellMask = (1 << 45) - 1;	/* rightmost 45 bits*/
+	uint64_t	cellMask = (1LL << 45) - 1;		/* rightmost 45 bits */
 	uint64_t	aCell;
 	uint64_t	bCell;
-	uint64_t	mask;
 
-    /* identity */
-    if (*a == *b)
+	/* identity */
+	if (a == b)
 	{
 		return 1;
 	}
 
-    /* no shared basecell */
-    if (H3_GET_BASE_CELL(*a) != H3_GET_BASE_CELL(*b))
+	/* no shared basecell */
+	if (H3_GET_BASE_CELL(a) != H3_GET_BASE_CELL(b))
 	{
 		return 0;
 	}
 
-	aRes = H3_GET_RESOLUTION(*a);
-	bRes = H3_GET_RESOLUTION(*b);
-	aCell = *a & cellMask;
-	bCell = *b & cellMask;
+	aRes = H3_GET_RESOLUTION(a);
+	bRes = H3_GET_RESOLUTION(b);
+	aCell = a & cellMask;
+	bCell = b & cellMask;
 
 	/* a contains b */
-	if (*a == H3_ROOT_INDEX || (aCell^bCell) >> (45 - 3 * aRes) == 0)
+	if (a == H3_ROOT_INDEX || (aCell ^ bCell) >> (45 - 3 * aRes) == 0)
 	{
 		return 1;
 	}
 
 	/* a contained by b */
-	if (*b == H3_ROOT_INDEX || (aCell^bCell) >> (45 - 3 * bRes) == 0)
+	if (b == H3_ROOT_INDEX || (aCell ^ bCell) >> (45 - 3 * bRes) == 0)
 	{
 		return -1;
 	}
@@ -78,17 +78,19 @@ common_ancestor(H3Index a, H3Index b)
 {
 	int			aRes;
 	int			bRes;
-	int			maxRes; 
-	uint64_t	cellMask = (1 << 45) - 1;	/* rightmost 45 bits*/
+	int			maxRes;
+	uint64_t	cellMask = (1LL << 45) - 1;		/* rightmost 45 bits */
 	uint64_t	abCell;
+	uint64_t	mask;
+	H3Index		masked;
 
 	if (a == b)
 	{
 		return a;
 	}
 
-    /* do not even share the basecell */
-    if (H3_GET_BASE_CELL(a) != H3_GET_BASE_CELL(b))
+	/* do not even share the basecell */
+	if (H3_GET_BASE_CELL(a) != H3_GET_BASE_CELL(b))
 	{
 		return H3_ROOT_INDEX;
 	}
@@ -97,10 +99,12 @@ common_ancestor(H3Index a, H3Index b)
 	abCell = a & b & cellMask;
 
 	/* basecell as the only common ancestor */
-	if(abCell == 0)
+	if (abCell == 0)
 	{
-		return H3_SET_RESOLUTION(a | cellMask, 0);
-	} 
+		masked = a | cellMask;
+		H3_SET_RESOLUTION(masked, 0);
+		return masked;
+	}
 
 	/* common ancestor at resolution > 0 */
 	aRes = H3_GET_RESOLUTION(a);
@@ -108,10 +112,12 @@ common_ancestor(H3Index a, H3Index b)
 	maxRes = (aRes < bRes) ? aRes : bRes;
 	for (int i = maxRes; i > 0; i--)
 	{
-		if(abCell >> (i * 3) == 0)
+		if (abCell >> (i * 3) == 0)
 		{
 			mask = (1 << (i * 3)) - 1;
-			return H3_SET_RESOLUTION(a | mask, i);
+			masked = a | mask;
+			H3_SET_RESOLUTION(masked, i);
+			return masked;
 		}
 	}
 
@@ -121,7 +127,7 @@ common_ancestor(H3Index a, H3Index b)
 /**
  * The GiST Consistent method for H3 indexes
  * Should return false if for all data items x below entry,
- * the predicate x op query == false, where op is the oper
+ * the predicate x op query == false, where op is the operation
  * corresponding to strategy in the pg_amop table.
  */
 PG_FUNCTION_INFO_V1(h3index_gist_consistent);
@@ -129,12 +135,12 @@ Datum
 h3index_gist_consistent(PG_FUNCTION_ARGS)
 {
 	GISTENTRY  *entry = (GISTENTRY *) PG_GETARG_POINTER(0);
-	H3Index    *query = PG_GETARG_H3_INDEX_P(1);
+	H3Index		query = PG_GETARG_H3INDEX(1);
 	StrategyNumber strategy = (StrategyNumber) PG_GETARG_UINT16(2);
 
 	/* Oid subtype = PG_GETARG_OID(3); */
 	bool	   *recheck = (bool *) PG_GETARG_POINTER(4);
-	H3Index    *key = DatumGetH3IndexP(entry->key);
+	H3Index		key = DatumGetH3Index(entry->key);
 
 	/* When the result is true, a recheck flag must also be returned. */
 	*recheck = true;
@@ -171,25 +177,24 @@ h3index_gist_union(PG_FUNCTION_ARGS)
 	GistEntryVector *entryvec = (GistEntryVector *) PG_GETARG_POINTER(0);
 	GISTENTRY  *entries = entryvec->vector;
 	int			n = entryvec->n;
-	H3Index    *out,
-			   *tmp;
+	H3Index    *out;
+	H3Index		tmp = DatumGetH3Index(entries[0].key);;
 
 	out = palloc(sizeof(H3Index));
-	tmp = DatumGetH3IndexP(entries[0].key);
-	*out = *tmp;
+	*out = tmp;
 
 	for (int i = 1; i < n; i++)
 	{
-		tmp = DatumGetH3IndexP(entries[i].key);
-		*out = common_ancestor(*out, *tmp);
+		tmp = DatumGetH3Index(entries[i].key);
+		*out = common_ancestor(*out, tmp);
 	}
 
-	PG_RETURN_H3_INDEX_P(out);
+	PG_RETURN_H3INDEX(*out);
 }
 
 /**
  * GiST Compress and Decompress methods for H3Indexes
- * do not do anything.
+ * do not do anything. We *could* use compact/uncompact?
  */
 PG_FUNCTION_INFO_V1(h3index_gist_compress);
 Datum
@@ -217,12 +222,12 @@ h3index_gist_penalty(PG_FUNCTION_ARGS)
 	GISTENTRY  *newentry = (GISTENTRY *) PG_GETARG_POINTER(1);
 	float	   *penalty = (float *) PG_GETARG_POINTER(2);
 
-	H3Index    *orig = DatumGetH3IndexP(origentry->key);
-	H3Index    *new = DatumGetH3IndexP(newentry->key);
+	H3Index		orig = DatumGetH3Index(origentry->key);
+	H3Index		new = DatumGetH3Index(newentry->key);
 
-	H3Index		ancestor = common_ancestor(*orig, *new);
+	H3Index		ancestor = common_ancestor(orig, new);
 
-	*penalty = (float) h3GetResolution(*orig) - h3GetResolution(ancestor);
+	*penalty = (float) h3GetResolution(orig) - h3GetResolution(ancestor);
 
 	PG_RETURN_POINTER(penalty);
 }
@@ -270,7 +275,7 @@ h3index_gist_picksplit(PG_FUNCTION_ARGS)
 	{
 		int			real_index = raw_entryvec[i] - ent;
 
-		tmp_union = DatumGetH3IndexP(ent[real_index].key);
+		*tmp_union = DatumGetH3Index(ent[real_index].key);
 		Assert(tmp_union != NULL);
 
 		/*
@@ -308,39 +313,53 @@ h3index_gist_picksplit(PG_FUNCTION_ARGS)
 	PG_RETURN_POINTER(v);
 }
 
+/**
+ * Returns true if two index entries are identical, false otherwise.
+ * (An “index entry” is a value of the index's storage type, not necessarily
+ * the original indexed column's type.)
+ */
 PG_FUNCTION_INFO_V1(h3index_gist_same);
 Datum
 h3index_gist_same(PG_FUNCTION_ARGS)
 {
-	H3Index    *a = PG_GETARG_H3_INDEX_P(0);
-	H3Index    *b = PG_GETARG_H3_INDEX_P(1);
+	H3Index		a = PG_GETARG_H3INDEX(0);
+	H3Index		b = PG_GETARG_H3INDEX(1);
 	bool	   *result = (bool *) PG_GETARG_POINTER(2);
 
-	*result = *a == *b;
+	*result = a == b;
 	PG_RETURN_POINTER(result);
 }
 
+/**
+ * Given an index entry p and a query value q, this function determines the
+ * index entry's “distance” from the query value. This function must be
+ * supplied if the operator class contains any ordering operators. A query
+ * using the ordering operator will be implemented by returning index entries
+ * with the smallest “distance” values first, so the results must be consistent
+ * with the operator's semantics. For a leaf index entry the result just
+ * represents the distance to the index entry; for an internal tree node, the
+ * result must be the smallest distance that any child entry could have.
+ */
 PG_FUNCTION_INFO_V1(h3index_gist_distance);
 Datum
 h3index_gist_distance(PG_FUNCTION_ARGS)
 {
 	GISTENTRY  *entry = (GISTENTRY *) PG_GETARG_POINTER(0);
-	H3Index    *query = PG_GETARG_H3_INDEX_P(1);
+	H3Index		query = PG_GETARG_H3INDEX(1);
+	StrategyNumber strategy = (StrategyNumber) PG_GETARG_UINT16(2);
 
-	/* StrategyNumber strategy = (StrategyNumber) PG_GETARG_UINT16(2); */
-	/* Oid			subtype = PG_GETARG_OID(3); */
+	/* Oid		subtype = PG_GETARG_OID(3); */
 	/* bool    *recheck = (bool *) PG_GETARG_POINTER(4); */
+	H3Index		key = DatumGetH3Index(entry->key);
+	double		retval;
 
-	H3Index    *key = DatumGetH3IndexP(entry->key);
+	switch (strategy)
+	{
+		case RTKNNSearchStrategyNumber:
+			retval = h3Distance(query, key);
+		default:
+			retval = -1;
+	}
 
-	/*
-	 * int			 aRes = h3GetResolution(*query); int		 bRes =
-	 * h3GetResolution(*key); H3Index	  aParent = h3ToCenterChild(*query,
-	 * bRes); H3Index	  bParent = h3ToCenterChild(*key, aRes);
-	 */
-
-	int			distance = h3Distance(*query, *key);
-
-	DEBUG(" dist %i", distance);
-	PG_RETURN_INT32(distance);
+	PG_RETURN_FLOAT8(retval);
 }
